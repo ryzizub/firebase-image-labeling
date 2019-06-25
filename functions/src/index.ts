@@ -1,15 +1,12 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-admin.initializeApp(functions.config().firebase);
-
-// tslint:disable-next-line: no-implicit-dependencies
-import path = require('path');
-import os = require('os');
+import * as path from 'path';
+import * as os from 'os'
 
 const vision = require('@google-cloud/vision');
+admin.initializeApp(functions.config().firebase);
 
-
-export const newCity = functions.storage
+export const newImage = functions.storage
     .object()
     .onFinalize((object) => {
 
@@ -25,6 +22,11 @@ export const newCity = functions.storage
             });
     });
 
+/**
+ * Download image from bucket and upload it to Google Cloud Vision, from that API gets labels for that image
+ * @param fileBucket name of the bucket on firebase
+ * @param fileName name of the file
+ */
 async function getLabelsForImage(fileBucket: string, fileName: string = 'something'): Promise<string[]> {
     const bucket = admin.storage().bucket(fileBucket);
     const tempFilePath = path.join(os.tmpdir(), fileName);
@@ -33,5 +35,5 @@ async function getLabelsForImage(fileBucket: string, fileName: string = 'somethi
     const client = new vision.ImageAnnotatorClient();
     const [result] = await client.labelDetection(tempFilePath);
     const labels = result.labelAnnotations;
-    return labels.map((label: { description: null; }) => label.description);
+    return labels.map((label: { description: string|null; }) => label.description);
 }
